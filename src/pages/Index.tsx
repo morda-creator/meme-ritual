@@ -50,9 +50,9 @@ const Index = () => {
       ? { title: competition.theme_title, aiIntro: competition.theme_intro }
       : { title: 'The next ritual begins Friday at 09:00', aiIntro: 'Patience. The altar is being prepared.' };
 
-  const handleSubmit = async (file: File) => {
+  const handleSubmit = async (file: File, authorName?: string) => {
     try {
-      await submitMeme(file);
+      await submitMeme(file, authorName);
       toast.success('Offering received.', { description: 'The AI has taken note.' });
     } catch {
       toast.error('Submission failed.', { description: 'The void rejected your offering.' });
