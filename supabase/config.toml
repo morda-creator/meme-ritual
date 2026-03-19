@@ -1,1 +1,10 @@
 project_id = "hfvdwvnyemhypvfipuwx"
+
+[functions.generate-theme]
+verify_jwt = false
+
+[functions.generate-commentary]
+verify_jwt = false
+
+[functions.announce-winner]
+verify_jwt = false
