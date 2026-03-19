@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.announce-winner]
 verify_jwt = false
+
+[functions.seed-memes]
+verify_jwt = false
