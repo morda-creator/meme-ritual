@@ -54,22 +54,38 @@ const RitualHeader = ({ phaseInfo, theme }: RitualHeaderProps) => {
         </motion.div>
 
         {/* Theme */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-secondary/50 border border-border rounded-lg p-5"
-        >
-          <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-2">
-            This week's theme
-          </p>
-          <h2 className="font-mono text-lg sm:text-xl text-foreground font-bold mb-2">
-            "{theme.title}"
-          </h2>
-          <p className="text-sm text-muted-foreground italic leading-relaxed">
-            {theme.aiIntro}
-          </p>
-        </motion.div>
+        {phaseInfo.phase === 'preparing' ? (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-secondary/50 border border-border rounded-lg p-5"
+          >
+            <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-2">
+              This week's theme
+            </p>
+            <p className="font-mono text-sm text-muted-foreground italic">
+              ??? — Theme will be revealed when the ritual begins.
+            </p>
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-secondary/50 border border-border rounded-lg p-5"
+          >
+            <p className="font-mono text-xs text-muted-foreground uppercase tracking-wider mb-2">
+              This week's theme
+            </p>
+            <h2 className="font-mono text-lg sm:text-xl text-foreground font-bold mb-2">
+              "{theme.title}"
+            </h2>
+            <p className="text-sm text-muted-foreground italic leading-relaxed">
+              {theme.aiIntro}
+            </p>
+          </motion.div>
+        )}
 
         {/* Phase sublabel */}
         <motion.p
