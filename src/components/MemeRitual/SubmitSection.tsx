@@ -30,9 +30,11 @@ const SubmitSection = ({ onSubmit }: SubmitSectionProps) => {
 
   const handleSubmit = () => {
     if (file) {
-      onSubmit(file);
+      const trimmed = alias.trim().slice(0, 30) || undefined;
+      onSubmit(file, trimmed);
       setFile(null);
       setPreview(null);
+      setAlias('');
     }
   };
 
