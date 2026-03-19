@@ -17,11 +17,13 @@ export function useCompetition() {
   const [submitting, setSubmitting] = useState(false);
   const sessionId = getSessionId();
 
-  // Fetch or create today's competition
+  // Fetch or create today's competition (only on Fridays)
   const fetchCompetition = useCallback(async () => {
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const isFriday = now.getUTCDay() === 5;
 
-    // Check if today's competition exists
+    // Always check if today's competition exists
     const { data: existing } = await supabase
       .from('competitions')
       .select('*')
@@ -31,6 +33,12 @@ export function useCompetition() {
     if (existing) {
       setCompetition(existing);
       return existing;
+    }
+
+    // Only create a new competition on Fridays
+    if (!isFriday) {
+      setCompetition(null);
+      return null;
     }
 
     // Call edge function which generates theme + creates competition in DB
