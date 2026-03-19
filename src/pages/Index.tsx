@@ -5,6 +5,7 @@ import RitualHeader from '@/components/MemeRitual/RitualHeader';
 import SubmitSection from '@/components/MemeRitual/SubmitSection';
 import MemeFeed from '@/components/MemeRitual/MemeFeed';
 import RevealBanner from '@/components/MemeRitual/RevealBanner';
+import ArchiveSection from '@/components/MemeRitual/ArchiveSection';
 import PhaseSelector from '@/components/MemeRitual/PhaseSelector';
 import { getDemoPhase, type Phase } from '@/lib/phases';
 import { WINNER_ANNOUNCEMENT } from '@/lib/mockData';
@@ -66,14 +67,7 @@ const Index = () => {
       ) : (
         <AnimatePresence mode="wait">
           {phaseInfo.phase === 'preparing' && (
-            <div className="max-w-3xl mx-auto px-6 sm:px-10 py-20 text-center">
-              <p className="font-mono text-muted-foreground text-sm animate-pulse-glow">
-                The ritual has not yet begun.
-              </p>
-              <p className="font-mono text-xs text-muted-foreground/50 mt-2">
-                Return when the time is right.
-              </p>
-            </div>
+            <ArchiveSection />
           )}
 
           {phaseInfo.phase === 'submission' && (
