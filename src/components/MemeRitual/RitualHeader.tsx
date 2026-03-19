@@ -96,6 +96,11 @@ const RitualHeader = ({ phaseInfo, theme }: RitualHeaderProps) => {
         >
           &gt; {phaseInfo.sublabel}
         </motion.p>
+
+        {/* Bot presence hints during active phases */}
+        {(phaseInfo.phase === 'submission' || phaseInfo.phase === 'voting') && (
+          <BotPresenceHint phase={phaseInfo.phase} />
+        )}
       </div>
     </header>
   );
