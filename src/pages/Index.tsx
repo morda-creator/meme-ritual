@@ -92,6 +92,8 @@ const Index = () => {
             Summoning the ritual...
           </p>
         </div>
+      ) : generating ? (
+        <GeneratingOverlay />
       ) : (
         <AnimatePresence mode="wait">
           {phaseInfo.phase === 'preparing' && (
