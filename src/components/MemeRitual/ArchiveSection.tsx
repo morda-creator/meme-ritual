@@ -70,12 +70,12 @@ const ArchiveSection = () => {
         ) : (
           <div className="space-y-4">
             {pastCompetitions.map((comp, i) => (
+              <Link key={comp.id} to={`/competition/${comp.id}`}>
               <motion.div
-                key={comp.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * i }}
-                className="border border-border rounded-lg bg-secondary/30 p-4 flex gap-4"
+                className="border border-border rounded-lg bg-secondary/30 p-4 flex gap-4 hover:border-primary/40 hover:bg-secondary/50 transition-colors cursor-pointer group"
               >
                 {/* Winner thumbnail */}
                 {comp.winner_image_url && (
