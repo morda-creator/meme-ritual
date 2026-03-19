@@ -8,6 +8,7 @@ import MemeFeed from '@/components/MemeRitual/MemeFeed';
 import RevealBanner from '@/components/MemeRitual/RevealBanner';
 import ArchiveSection from '@/components/MemeRitual/ArchiveSection';
 import PhaseSelector from '@/components/MemeRitual/PhaseSelector';
+import GeneratingOverlay from '@/components/MemeRitual/GeneratingOverlay';
 import { getDemoPhase, phaseInfoFromStatus, type Phase } from '@/lib/phases';
 import { WINNER_ANNOUNCEMENT } from '@/lib/mockData';
 import { useCompetition, type MemeWithVote } from '@/hooks/useCompetition';
