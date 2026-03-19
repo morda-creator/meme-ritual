@@ -7,14 +7,12 @@ const corsHeaders = {
 };
 
 const MEME_PROMPTS = [
-  "classic internet meme format, drake hotline bling style two-panel meme",
-  "distracted boyfriend meme template style, three people turning and looking",
-  "expanding brain meme with 4 panels showing increasing enlightenment",
+  "classic drake hotline bling two-panel meme with text",
   "this is fine dog sitting in burning room meme",
-  "two buttons sweating guy meme, person struggling to choose between two options",
+  "distracted boyfriend meme with three people",
 ];
 
-const FAKE_AUTHORS = ["entropy_enjoyer", "ctrl_alt_defeat", "vibes_dealer", "pixel_prophet", null]; // null = AI bot
+const FAKE_AUTHORS = ["entropy_enjoyer", "ctrl_alt_defeat", null]; // null = AI bot
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
