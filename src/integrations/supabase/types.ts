@@ -14,7 +14,115 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      competitions: {
+        Row: {
+          competition_date: string
+          created_at: string
+          id: string
+          status: string
+          theme_intro: string
+          theme_title: string
+          updated_at: string
+          winner_announcement: string | null
+          winner_meme_id: string | null
+        }
+        Insert: {
+          competition_date?: string
+          created_at?: string
+          id?: string
+          status?: string
+          theme_intro: string
+          theme_title: string
+          updated_at?: string
+          winner_announcement?: string | null
+          winner_meme_id?: string | null
+        }
+        Update: {
+          competition_date?: string
+          created_at?: string
+          id?: string
+          status?: string
+          theme_intro?: string
+          theme_title?: string
+          updated_at?: string
+          winner_announcement?: string | null
+          winner_meme_id?: string | null
+        }
+        Relationships: []
+      }
+      memes: {
+        Row: {
+          ai_comment: string | null
+          author_name: string | null
+          competition_id: string
+          created_at: string
+          id: string
+          image_url: string
+          is_ai_generated: boolean
+          session_id: string | null
+          vote_count: number
+        }
+        Insert: {
+          ai_comment?: string | null
+          author_name?: string | null
+          competition_id: string
+          created_at?: string
+          id?: string
+          image_url: string
+          is_ai_generated?: boolean
+          session_id?: string | null
+          vote_count?: number
+        }
+        Update: {
+          ai_comment?: string | null
+          author_name?: string | null
+          competition_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_ai_generated?: boolean
+          session_id?: string | null
+          vote_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memes_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      votes: {
+        Row: {
+          created_at: string
+          id: string
+          meme_id: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meme_id: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meme_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_meme_id_fkey"
+            columns: ["meme_id"]
+            isOneToOne: false
+            referencedRelation: "memes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
