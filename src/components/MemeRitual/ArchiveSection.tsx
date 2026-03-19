@@ -43,31 +43,7 @@ const ArchiveSection = () => {
         </p>
       </motion.div>
 
-      {/* Archive */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-      >
-        <h2 className="font-mono text-sm text-muted-foreground uppercase tracking-widest mb-6 flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-primary" />
-          Hall of Fame
-        </h2>
-
-        {loading ? (
-          <p className="font-mono text-xs text-muted-foreground animate-pulse-glow">
-            Consulting the archives...
-          </p>
-        ) : pastCompetitions.length === 0 ? (
-          <div className="border border-border rounded-lg p-8 text-center bg-secondary/30">
-            <p className="font-mono text-sm text-muted-foreground">
-              No rituals have concluded.
-            </p>
-            <p className="font-mono text-xs text-muted-foreground/50 mt-1">
-              The archive awaits.
-            </p>
-          </div>
-        ) : (
+      {!loading && pastCompetitions.length > 0 && (
           <div className="space-y-4">
             {pastCompetitions.map((comp, i) => (
               <Link key={comp.id} to={`/competition/${comp.id}`}>
