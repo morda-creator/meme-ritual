@@ -48,7 +48,7 @@ const RitualHeader = ({ phaseInfo, theme }: RitualHeaderProps) => {
               {phaseInfo.label}
             </span>
           </div>
-          {phaseInfo.nextPhaseTime && (
+          {phaseInfo.phase !== 'preparing' && phaseInfo.nextPhaseTime && (
             <CountdownTimer targetTime={phaseInfo.nextPhaseTime} />
           )}
         </motion.div>
