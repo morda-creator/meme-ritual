@@ -21,7 +21,7 @@ export function useCompetition() {
   const fetchCompetition = useCallback(async () => {
     const today = new Date().toISOString().split('T')[0];
 
-    // Try to get today's competition
+    // Check if today's competition exists
     const { data: existing } = await supabase
       .from('competitions')
       .select('*')
@@ -33,38 +33,15 @@ export function useCompetition() {
       return existing;
     }
 
-    // Generate a new theme via AI
+    // Call edge function which generates theme + creates competition in DB
     try {
-      const theme = await generateTheme();
-      const { data: newComp, error } = await supabase
-        .from('competitions')
-        .insert({
-          theme_title: theme.title,
-          theme_intro: theme.intro,
-          status: 'submission',
-          competition_date: today,
-        })
-        .select()
-        .single();
-
+      const { data, error } = await supabase.functions.invoke('generate-theme');
       if (error) throw error;
-      setCompetition(newComp);
-      return newComp;
+      setCompetition(data);
+      return data;
     } catch (e) {
       console.error('Failed to create competition:', e);
-      // Fallback theme
-      const { data: fallback } = await supabase
-        .from('competitions')
-        .insert({
-          theme_title: 'The Internet Was a Mistake',
-          theme_intro: 'And yet here we are, making memes about it. Proceed.',
-          status: 'submission',
-          competition_date: today,
-        })
-        .select()
-        .single();
-      setCompetition(fallback);
-      return fallback;
+      return null;
     }
   }, []);
 
