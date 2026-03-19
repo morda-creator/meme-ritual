@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import RitualHeader from '@/components/MemeRitual/RitualHeader';
@@ -7,12 +8,11 @@ import MemeFeed from '@/components/MemeRitual/MemeFeed';
 import RevealBanner from '@/components/MemeRitual/RevealBanner';
 import ArchiveSection from '@/components/MemeRitual/ArchiveSection';
 import PhaseSelector from '@/components/MemeRitual/PhaseSelector';
-import { getDemoPhase, type Phase } from '@/lib/phases';
+import { getDemoPhase, phaseInfoFromStatus, type Phase } from '@/lib/phases';
 import { WINNER_ANNOUNCEMENT } from '@/lib/mockData';
 import { useCompetition, type MemeWithVote } from '@/hooks/useCompetition';
 import type { Meme } from '@/lib/mockData';
 
-// Adapt DB memes to the MemeCard format
 function toCardMeme(m: MemeWithVote, showAuthor: boolean): Meme {
   return {
     id: m.id,
@@ -27,9 +27,18 @@ function toCardMeme(m: MemeWithVote, showAuthor: boolean): Meme {
 }
 
 const Index = () => {
+  const [searchParams] = useSearchParams();
+  const isDemo = searchParams.get('demo') === 'true';
+
   const [demoPhase, setDemoPhase] = useState<Phase>('submission');
-  const phaseInfo = getDemoPhase(demoPhase);
   const { competition, memes, loading, submitting, submitMeme, vote } = useCompetition();
+
+  // In live mode, phase comes from competition.status; in demo mode, from manual selector
+  const phaseInfo = useMemo(() => {
+    if (isDemo) return getDemoPhase(demoPhase);
+    if (!competition) return phaseInfoFromStatus('preparing');
+    return phaseInfoFromStatus(competition.status);
+  }, [isDemo, demoPhase, competition]);
 
   const theme = competition
     ? { title: competition.theme_title, aiIntro: competition.theme_intro }
@@ -103,8 +112,10 @@ const Index = () => {
         </AnimatePresence>
       )}
 
-      {/* Demo phase selector */}
-      <PhaseSelector currentPhase={demoPhase} onPhaseChange={setDemoPhase} />
+      {/* Demo phase selector — only visible with ?demo=true */}
+      {isDemo && (
+        <PhaseSelector currentPhase={demoPhase} onPhaseChange={setDemoPhase} />
+      )}
     </div>
   );
 };

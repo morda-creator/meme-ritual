@@ -7,102 +7,83 @@ export interface PhaseInfo {
   nextPhaseTime: Date | null;
 }
 
-export function getCurrentPhase(): PhaseInfo {
+const PHASE_META: Record<Phase, { label: string; sublabel: string }> = {
+  preparing: { label: 'Preparing ritual', sublabel: 'The altar is being set. Patience.' },
+  submission: { label: 'Submissions open', sublabel: 'Present your offerings.' },
+  voting: { label: 'Voting open', sublabel: 'Judge thy peers. Anonymously.' },
+  reveal: { label: 'Reveal', sublabel: 'The truth emerges.' },
+};
+
+/** Map a DB competition status string to a Phase */
+export function statusToPhase(status: string): Phase {
+  if (['submission', 'voting', 'reveal', 'preparing'].includes(status)) {
+    return status as Phase;
+  }
+  return 'preparing';
+}
+
+/** Get the next phase transition time based on current phase (CET = UTC+1) */
+export function getNextPhaseTime(phase: Phase): Date | null {
+  if (phase === 'reveal') return null;
+
   const now = new Date();
-  const day = now.getDay(); // 0=Sun, 5=Fri
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  const currentMinutes = hours * 60 + minutes;
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
 
-  // For demo purposes, let's make it work any day
-  // In production, check day === 5 (Friday)
-  const isFriday = day === 5;
-
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  if (!isFriday) {
-    const nextFriday = new Date(today);
-    nextFriday.setDate(today.getDate() + ((5 - day + 7) % 7 || 7));
-    nextFriday.setHours(9, 0, 0, 0);
-    return {
-      phase: 'preparing',
-      label: 'Preparing ritual',
-      sublabel: 'The next ceremony approaches.',
-      nextPhaseTime: nextFriday,
-    };
+  // All times in UTC (CET - 1)
+  if (phase === 'preparing') {
+    // Next phase: submission at 08:00 UTC (09:00 CET)
+    const next = getNextFriday(today);
+    next.setUTCHours(8, 0, 0, 0);
+    return next;
   }
-
-  if (currentMinutes < 9 * 60) {
-    const start = new Date(today);
-    start.setHours(9, 0, 0, 0);
-    return {
-      phase: 'preparing',
-      label: 'Preparing ritual',
-      sublabel: 'The altar is being set. Patience.',
-      nextPhaseTime: start,
-    };
+  if (phase === 'submission') {
+    // Next phase: voting at 12:00 UTC (13:00 CET)
+    const target = new Date(today);
+    target.setUTCHours(12, 0, 0, 0);
+    return target > now ? target : null;
   }
-
-  if (currentMinutes < 13 * 60) {
-    const votingStart = new Date(today);
-    votingStart.setHours(13, 0, 0, 0);
-    return {
-      phase: 'submission',
-      label: 'Submissions open',
-      sublabel: 'Present your offerings.',
-      nextPhaseTime: votingStart,
-    };
+  if (phase === 'voting') {
+    // Next phase: reveal at 15:00 UTC (16:00 CET)
+    const target = new Date(today);
+    target.setUTCHours(15, 0, 0, 0);
+    return target > now ? target : null;
   }
+  return null;
+}
 
-  if (currentMinutes < 16 * 60) {
-    const revealTime = new Date(today);
-    revealTime.setHours(16, 0, 0, 0);
-    return {
-      phase: 'voting',
-      label: 'Voting open',
-      sublabel: 'Judge thy peers. Anonymously.',
-      nextPhaseTime: revealTime,
-    };
-  }
+function getNextFriday(today: Date): Date {
+  const day = today.getUTCDay();
+  const daysUntilFriday = (5 - day + 7) % 7 || 7;
+  const next = new Date(today);
+  next.setUTCDate(next.getUTCDate() + daysUntilFriday);
+  return next;
+}
 
+/** Build PhaseInfo from a DB competition status */
+export function phaseInfoFromStatus(status: string): PhaseInfo {
+  const phase = statusToPhase(status);
+  const meta = PHASE_META[phase];
   return {
-    phase: 'reveal',
-    label: 'Reveal',
-    sublabel: 'The truth emerges.',
-    nextPhaseTime: null,
+    phase,
+    label: meta.label,
+    sublabel: meta.sublabel,
+    nextPhaseTime: getNextPhaseTime(phase),
   };
 }
 
-// For demo: cycle through phases every 60 seconds
-export function getDemoPhase(forcePhase?: Phase): PhaseInfo {
-  if (forcePhase) {
-    const phases: Record<Phase, PhaseInfo> = {
-      preparing: {
-        phase: 'preparing',
-        label: 'Preparing ritual',
-        sublabel: 'The altar is being set. Patience.',
-        nextPhaseTime: new Date(Date.now() + 30 * 60000),
-      },
-      submission: {
-        phase: 'submission',
-        label: 'Submissions open',
-        sublabel: 'Present your offerings.',
-        nextPhaseTime: new Date(Date.now() + 4 * 3600000),
-      },
-      voting: {
-        phase: 'voting',
-        label: 'Voting open',
-        sublabel: 'Judge thy peers. Anonymously.',
-        nextPhaseTime: new Date(Date.now() + 3 * 3600000),
-      },
-      reveal: {
-        phase: 'reveal',
-        label: 'Reveal',
-        sublabel: 'The truth emerges.',
-        nextPhaseTime: null,
-      },
-    };
-    return phases[forcePhase];
-  }
-  return getCurrentPhase();
+/** For demo mode — force a specific phase */
+export function getDemoPhase(forcePhase: Phase): PhaseInfo {
+  const meta = PHASE_META[forcePhase];
+  const demoTimes: Record<Phase, Date | null> = {
+    preparing: new Date(Date.now() + 30 * 60000),
+    submission: new Date(Date.now() + 4 * 3600000),
+    voting: new Date(Date.now() + 3 * 3600000),
+    reveal: null,
+  };
+  return {
+    phase: forcePhase,
+    label: meta.label,
+    sublabel: meta.sublabel,
+    nextPhaseTime: demoTimes[forcePhase],
+  };
 }
