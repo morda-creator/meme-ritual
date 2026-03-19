@@ -1,58 +1,16 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { MEME_TEMPLATES, BOT_ALIASES, encodeMemeText, pickRandom } from "../_shared/meme-templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-interface MemeTemplate {
-  id: string;
-  lines: number;
-  description: string;
-}
-
-const MEME_TEMPLATES: MemeTemplate[] = [
-  { id: "drake", lines: 2, description: "Drakeposting: top = bad/boring, bottom = preferred alternative" },
-  { id: "fine", lines: 2, description: "This Is Fine: dog in burning room. Line 1 = situation, Line 2 = denial" },
-  { id: "db", lines: 3, description: "Distracted Boyfriend: Line 1 = distraction, Line 2 = boyfriend, Line 3 = girlfriend" },
-  { id: "buzz", lines: 2, description: "Buzz Lightyear 'X everywhere': Line 1 = subject, Line 2 = 'X everywhere'" },
-  { id: "rollsafe", lines: 2, description: "Roll Safe think about it: Line 1 = flawed premise, Line 2 = 'clever' conclusion" },
-  { id: "picard", lines: 2, description: "Picard facepalm: Line 1 = frustrating thing, Line 2 = why it's dumb" },
-  { id: "exit12", lines: 3, description: "Highway exit: Line 1 = highway (sensible choice), Line 2 = exit (bad choice), Line 3 = car swerving to exit" },
-  { id: "batman", lines: 2, description: "Batman slapping Robin: Line 1 = Robin says something dumb, Line 2 = Batman's response" },
-  { id: "afraid", lines: 2, description: "Afraid to ask Andy: Line 1 = thing you don't understand, Line 2 = 'and at this point I'm too afraid to ask'" },
-  { id: "doge", lines: 2, description: "Doge: Line 1 = 'much X', Line 2 = 'very Y / wow'" },
-];
-
-const BOT_ALIASES = [
-  "pixel_pusher", "dank_prophet", "meme_intern_42", "ctrl_alt_defeat",
-  "entropy_enjoyer", "the_algorithm", "null_pointer", "cache_money",
-  "sudo_memer", "bit_flipper", "stack_overflow_survivor", "git_blamed",
-  "404_creativity", "kernel_panic_at_disco", "segfault_sally",
-];
-
-function encodeMemeText(text: string): string {
-  return text
-    .replace(/_/g, "__")
-    .replace(/ /g, "_")
-    .replace(/\?/g, "~q")
-    .replace(/%/g, "~p")
-    .replace(/#/g, "~h")
-    .replace(/\//g, "~s")
-    .replace(/"/g, "''")
-    .replace(/-/g, "--");
-}
-
-function pickRandom<T>(arr: T[], count: number): T[] {
-  const shuffled = [...arr].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
-}
-
 async function generateMemeTexts(
   apiKey: string,
   theme: string,
-  templates: MemeTemplate[]
+  templates: typeof MEME_TEMPLATES
 ): Promise<Array<{ lines: string[] }>> {
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -204,8 +162,8 @@ serve(async (req) => {
     for (let i = 0; i < selectedTemplates.length; i++) {
       // Stagger submissions: wait 30-180 seconds between each (except first waits 60-300s)
       const delayMs = i === 0
-        ? (60 + Math.floor(Math.random() * 240)) * 1000  // 1-5 min initial delay
-        : (30 + Math.floor(Math.random() * 150)) * 1000; // 0.5-3 min between submissions
+        ? (60 + Math.floor(Math.random() * 240)) * 1000
+        : (30 + Math.floor(Math.random() * 150)) * 1000;
 
       console.log(`Bot meme ${i}: waiting ${Math.round(delayMs / 1000)}s before submitting...`);
       await new Promise((r) => setTimeout(r, delayMs));
@@ -234,7 +192,7 @@ serve(async (req) => {
           author_name: selectedAliases[i],
           is_ai_generated: true,
           session_id: `bot-${Date.now()}-${i}`,
-          vote_count: 0, // Bot starts at 0, earns votes fairly
+          vote_count: 0,
         });
 
         if (insertError) {
