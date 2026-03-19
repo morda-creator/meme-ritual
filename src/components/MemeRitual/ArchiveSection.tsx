@@ -44,6 +44,16 @@ const ArchiveSection = () => {
       </motion.div>
 
       {!loading && pastCompetitions.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <h2 className="font-mono text-sm text-muted-foreground uppercase tracking-widest mb-6 flex items-center gap-2">
+            <Trophy className="w-4 h-4 text-primary" />
+            Hall of Fame
+          </h2>
+
           <div className="space-y-4">
             {pastCompetitions.map((comp, i) => (
               <Link key={comp.id} to={`/competition/${comp.id}`}>
@@ -53,7 +63,6 @@ const ArchiveSection = () => {
                 transition={{ delay: 0.1 * i }}
                 className="border border-border rounded-lg bg-secondary/30 p-4 flex gap-4 hover:border-primary/40 hover:bg-secondary/50 transition-colors cursor-pointer group"
               >
-                {/* Winner thumbnail */}
                 {comp.winner_image_url && (
                   <div className="w-20 h-20 sm:w-24 sm:h-24 rounded overflow-hidden border border-border flex-shrink-0">
                     <img
@@ -97,8 +106,8 @@ const ArchiveSection = () => {
               </Link>
             ))}
           </div>
-        )}
-      </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };
