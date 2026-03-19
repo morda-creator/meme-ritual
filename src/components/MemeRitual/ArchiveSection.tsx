@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useArchive } from '@/hooks/useArchive';
 import CountdownTimer from './CountdownTimer';
-import { Trophy } from 'lucide-react';
+import { Trophy, ChevronRight } from 'lucide-react';
 
 function getNextFriday9CET(): Date {
   const now = new Date();
@@ -69,12 +70,12 @@ const ArchiveSection = () => {
         ) : (
           <div className="space-y-4">
             {pastCompetitions.map((comp, i) => (
+              <Link key={comp.id} to={`/competition/${comp.id}`}>
               <motion.div
-                key={comp.id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 * i }}
-                className="border border-border rounded-lg bg-secondary/30 p-4 flex gap-4"
+                className="border border-border rounded-lg bg-secondary/30 p-4 flex gap-4 hover:border-primary/40 hover:bg-secondary/50 transition-colors cursor-pointer group"
               >
                 {/* Winner thumbnail */}
                 {comp.winner_image_url && (
@@ -114,8 +115,10 @@ const ArchiveSection = () => {
                       )}
                     </p>
                   )}
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/30 group-hover:text-primary transition-colors ml-auto flex-shrink-0" />
                 </div>
               </motion.div>
+              </Link>
             ))}
           </div>
         )}
