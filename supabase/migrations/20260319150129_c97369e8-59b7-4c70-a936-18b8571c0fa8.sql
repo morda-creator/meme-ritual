@@ -1,0 +1,1 @@
+DELETE FROM memes WHERE id = 'be9f89db-4867-4591-9151-15a2fafce32f';
