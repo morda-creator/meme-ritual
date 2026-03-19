@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.advance-phase]
 verify_jwt = false
+
+[functions.bot-submit]
+verify_jwt = false

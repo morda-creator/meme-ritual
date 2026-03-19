@@ -113,6 +113,23 @@ serve(async (req) => {
       .update({ status: phase })
       .eq("id", comp.id);
 
+    // Trigger bot submissions when entering submission phase
+    if (phase === "submission") {
+      try {
+        console.log("Triggering bot-submit for competition:", comp.id);
+        fetch(`${supabaseUrl}/functions/v1/bot-submit`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${serviceRoleKey}`,
+          },
+          body: JSON.stringify({ competition_id: comp.id }),
+        }); // Fire and forget — bot submits asynchronously with delays
+      } catch (e) {
+        console.error("Bot-submit trigger failed (non-fatal):", e);
+      }
+    }
+
     return new Response(JSON.stringify({
       message: `Transitioned to ${phase} phase`,
       competition_id: comp.id,
