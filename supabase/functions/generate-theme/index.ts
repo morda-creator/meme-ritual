@@ -119,8 +119,8 @@ Generate a weekly meme theme. The theme should reference current cultural moment
 
     // Auto-seed memes for the new competition
     try {
-      console.log("Auto-seeding memes for competition:", competition.id);
-      const seedResponse = await fetch(`${supabaseUrl}/functions/v1/seed-memes`, {
+      console.log("Triggering bot-submit for competition:", competition.id);
+      const seedResponse = await fetch(`${supabaseUrl}/functions/v1/bot-submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
