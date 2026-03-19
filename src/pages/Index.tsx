@@ -34,7 +34,7 @@ const Index = () => {
 
   const [demoPhase, setDemoPhase] = useState<Phase>('submission');
   const { competition, memes, loading, submitting, submitMeme, vote } = useCompetition();
-  const { demoTheme, demoMemes, generating, generateDemo, demoVote } = useDemo();
+  const { demoTheme, demoMemes, generating, generateDemo, demoSubmit, demoVote } = useDemo();
 
   const phaseInfo = useMemo(() => {
     if (isDemo) return getDemoPhase(demoPhase);
