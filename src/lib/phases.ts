@@ -16,7 +16,7 @@ export function getCurrentPhase(): PhaseInfo {
 
   // For demo purposes, let's make it work any day
   // In production, check day === 5 (Friday)
-  const isFriday = true; // day === 5;
+  const isFriday = day === 5;
 
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
