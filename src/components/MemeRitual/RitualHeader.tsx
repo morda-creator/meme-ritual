@@ -1,6 +1,49 @@
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { PhaseInfo } from '@/lib/phases';
 import CountdownTimer from './CountdownTimer';
+
+const BOT_HINTS_SUBMISSION = [
+  "> Something else is also creating memes right now...",
+  "> You're not the only one submitting.",
+  "> The machine watches. And participates.",
+  "> A presence stirs in the data center.",
+  "> Somewhere, a GPU is being very creative.",
+];
+
+const BOT_HINTS_VOTING = [
+  "> Not all contestants are carbon-based.",
+  "> Can you tell which memes have a pulse?",
+  "> The machine submitted. Now it waits.",
+  "> Some of these were made without thumbs.",
+];
+
+const BotPresenceHint = ({ phase }: { phase: string }) => {
+  const hints = phase === 'submission' ? BOT_HINTS_SUBMISSION : BOT_HINTS_VOTING;
+  const [index, setIndex] = useState(() => Math.floor(Math.random() * hints.length));
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIndex((prev) => (prev + 1) % hints.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [hints.length]);
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.p
+        key={index}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.6 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.8 }}
+        className="font-mono text-xs text-primary/50 mt-3 tracking-wide"
+      >
+        {hints[index]}
+      </motion.p>
+    </AnimatePresence>
+  );
+};
 
 interface RitualHeaderProps {
   phaseInfo: PhaseInfo;
