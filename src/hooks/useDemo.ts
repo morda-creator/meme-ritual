@@ -80,5 +80,5 @@ export function useDemo() {
     ));
   }, []);
 
-  return { demoTheme, demoMemes, generating, generateDemo, demoVote };
+  return { demoTheme, demoMemes, generating, generateDemo, demoSubmit, demoVote };
 }

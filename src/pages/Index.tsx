@@ -106,7 +106,7 @@ const Index = () => {
 
           {phaseInfo.phase === 'submission' && (
             <div>
-              {!isDemo && <SubmitSection onSubmit={handleSubmit} />}
+              <SubmitSection onSubmit={handleSubmit} />
               {submitting && (
                 <div className="max-w-3xl mx-auto px-6 sm:px-10 pb-4">
                   <p className="font-mono text-xs text-primary animate-pulse-glow">
