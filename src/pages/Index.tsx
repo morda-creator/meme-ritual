@@ -52,7 +52,11 @@ const Index = () => {
 
   const handleSubmit = async (file: File, authorName?: string) => {
     try {
-      await submitMeme(file, authorName);
+      if (isDemo) {
+        await demoSubmit(file, authorName);
+      } else {
+        await submitMeme(file, authorName);
+      }
       toast.success('Offering received.', { description: 'The AI has taken note.' });
     } catch {
       toast.error('Submission failed.', { description: 'The void rejected your offering.' });
