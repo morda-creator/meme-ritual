@@ -20,21 +20,22 @@ function encodeMemeText(text: string): string {
 
 interface MemeTemplate {
   id: string;
+  lines: number;
   description: string;
   author: string | null;
 }
 
 const MEME_TEMPLATES: MemeTemplate[] = [
-  { id: "drake", description: "Drake Hotline Bling: top panel is something bad/boring, bottom panel is the preferred funny alternative", author: "entropy_enjoyer" },
-  { id: "fine", description: "This Is Fine: dog sitting in burning room, top text is the denial, bottom can be empty or a punchline", author: null },
-  { id: "distracted", description: "Distracted Boyfriend: the girlfriend (being ignored) is labeled, the other woman (distraction) is labeled, boyfriend is the person choosing", author: "ctrl_alt_defeat" },
+  { id: "drake", lines: 2, description: "Drakeposting: top panel = bad/boring thing, bottom panel = preferred funny alternative", author: "entropy_enjoyer" },
+  { id: "fine", lines: 2, description: "This Is Fine: dog in burning room. Line 1 = situation, Line 2 = denial/punchline", author: null },
+  { id: "db", lines: 3, description: "Distracted Boyfriend: Line 1 = the distraction (other woman), Line 2 = the boyfriend (who is distracted), Line 3 = the girlfriend (being ignored)", author: "ctrl_alt_defeat" },
 ];
 
 async function generateMemeTexts(
   apiKey: string,
   theme: string,
   templates: MemeTemplate[]
-): Promise<Array<{ top: string; bottom: string }>> {
+): Promise<Array<{ lines: string[] }>> {
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -46,17 +47,17 @@ async function generateMemeTexts(
       messages: [
         {
           role: "system",
-          content: `You are a meme text writer. You write short, punchy, funny meme captions in the style of classic internet memes. Dry humor, absurd, relatable. Keep text SHORT (under 8 words per line). Always in English.`,
+          content: `You are a meme text writer. You write short, punchy, funny meme captions in the style of classic internet memes. Dry humor, absurd, relatable. Keep each line SHORT (under 8 words). Always in English.`,
         },
         {
           role: "user",
           content: `Theme: "${theme}"
 
-Generate top and bottom text for these ${templates.length} meme templates:
+Generate text lines for these ${templates.length} meme templates:
 
-${templates.map((t, i) => `${i + 1}. ${t.id}: ${t.description}`).join("\n")}
+${templates.map((t, i) => `${i + 1}. ${t.id} (${t.lines} lines): ${t.description}`).join("\n")}
 
-Make each one hilarious and relevant to the theme. The humor should be dry, absurd, and internet-culture style.`,
+Make each one hilarious and relevant to the theme.`,
         },
       ],
       tools: [
@@ -64,7 +65,7 @@ Make each one hilarious and relevant to the theme. The humor should be dry, absu
           type: "function",
           function: {
             name: "set_meme_texts",
-            description: "Set the top and bottom text for each meme template",
+            description: "Set the text lines for each meme template",
             parameters: {
               type: "object",
               properties: {
@@ -73,10 +74,13 @@ Make each one hilarious and relevant to the theme. The humor should be dry, absu
                   items: {
                     type: "object",
                     properties: {
-                      top: { type: "string", description: "Top text (short, under 8 words)" },
-                      bottom: { type: "string", description: "Bottom text (short, under 8 words, can be empty string)" },
+                      lines: {
+                        type: "array",
+                        items: { type: "string" },
+                        description: "Array of text lines for this template, matching the required number of lines",
+                      },
                     },
-                    required: ["top", "bottom"],
+                    required: ["lines"],
                     additionalProperties: false,
                   },
                 },
@@ -105,7 +109,7 @@ Make each one hilarious and relevant to the theme. The humor should be dry, absu
   return parsed.memes;
 }
 
-async function generateComment(apiKey: string, theme: string, templateId: string, top: string, bottom: string): Promise<string> {
+async function generateComment(apiKey: string, theme: string, templateId: string, lines: string[]): Promise<string> {
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -119,7 +123,7 @@ async function generateComment(apiKey: string, theme: string, templateId: string
           role: "system",
           content: `You are the dry, sardonic AI host of MEME_RITUAL. Write a brief comment (1 sentence, under 100 chars) about a meme submission. Be witty, dry, slightly existential. Theme: "${theme}"`,
         },
-        { role: "user", content: `Comment on a "${templateId}" meme. Top: "${top}", Bottom: "${bottom}"` },
+        { role: "user", content: `Comment on a "${templateId}" meme with text: ${lines.map((l, i) => `Line ${i+1}: "${l}"`).join(", ")}` },
       ],
       tools: [{
         type: "function",
@@ -202,19 +206,18 @@ serve(async (req) => {
     for (let i = 0; i < MEME_TEMPLATES.length; i++) {
       try {
         const t = MEME_TEMPLATES[i];
-        const texts = memeTexts[i] || { top: "When the meme writes itself", bottom: "" };
+        const textData = memeTexts[i] || { lines: Array(t.lines).fill("...") };
+        // Ensure correct number of lines
+        const lines = textData.lines.slice(0, t.lines);
+        while (lines.length < t.lines) lines.push("_");
 
-        const top = encodeMemeText(texts.top);
-        const bottom = encodeMemeText(texts.bottom);
-
-        const pathParts = [t.id, top];
-        if (bottom) pathParts.push(bottom);
-        const memeUrl = `https://api.memegen.link/images/${pathParts.join("/")}.png?width=800`;
+        const encodedLines = lines.map(l => encodeMemeText(l || "_"));
+        const memeUrl = `https://api.memegen.link/images/${t.id}/${encodedLines.join("/")}.png?width=800`;
 
         // Generate AI commentary
         let aiComment = "The AI stares. Processing.";
         try {
-          aiComment = await generateComment(LOVABLE_API_KEY, theme, t.id, texts.top, texts.bottom);
+          aiComment = await generateComment(LOVABLE_API_KEY, theme, t.id, lines);
         } catch (e) {
           console.error(`Commentary ${i} failed:`, e);
         }
@@ -236,7 +239,7 @@ serve(async (req) => {
           console.error(`Insert ${i} failed:`, insertError);
           results.push(`meme ${i}: insert failed`);
         } else {
-          results.push(`meme ${i} (${t.id}): "${texts.top}" / "${texts.bottom}"`);
+          results.push(`meme ${i} (${t.id}): ${lines.join(" / ")}`);
         }
 
         if (i < MEME_TEMPLATES.length - 1) {
