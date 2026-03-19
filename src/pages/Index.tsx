@@ -11,6 +11,7 @@ import PhaseSelector from '@/components/MemeRitual/PhaseSelector';
 import { getDemoPhase, phaseInfoFromStatus, type Phase } from '@/lib/phases';
 import { WINNER_ANNOUNCEMENT } from '@/lib/mockData';
 import { useCompetition, type MemeWithVote } from '@/hooks/useCompetition';
+import { useDemo } from '@/hooks/useDemo';
 import type { Meme } from '@/lib/mockData';
 
 function toCardMeme(m: MemeWithVote, showAuthor: boolean): Meme {
@@ -32,17 +33,21 @@ const Index = () => {
 
   const [demoPhase, setDemoPhase] = useState<Phase>('submission');
   const { competition, memes, loading, submitting, submitMeme, vote } = useCompetition();
+  const { demoTheme, demoMemes, generating, generateDemo, demoVote } = useDemo();
 
-  // In live mode, phase comes from competition.status; in demo mode, from manual selector
   const phaseInfo = useMemo(() => {
     if (isDemo) return getDemoPhase(demoPhase);
     if (!competition) return phaseInfoFromStatus('preparing');
     return phaseInfoFromStatus(competition.status);
   }, [isDemo, demoPhase, competition]);
 
-  const theme = competition
-    ? { title: competition.theme_title, aiIntro: competition.theme_intro }
-    : { title: 'The next ritual begins Friday at 09:00', aiIntro: 'Patience. The altar is being prepared.' };
+  // Use demo data when in demo mode and demo content has been generated
+  const activeMemes = isDemo && demoMemes.length > 0 ? demoMemes : memes;
+  const theme = isDemo && demoTheme
+    ? { title: demoTheme.title, aiIntro: demoTheme.intro }
+    : competition
+      ? { title: competition.theme_title, aiIntro: competition.theme_intro }
+      : { title: 'The next ritual begins Friday at 09:00', aiIntro: 'Patience. The altar is being prepared.' };
 
   const handleSubmit = async (file: File) => {
     try {
@@ -54,11 +59,24 @@ const Index = () => {
   };
 
   const handleVote = (id: string) => {
-    vote(id);
+    if (isDemo) {
+      demoVote(id);
+    } else {
+      vote(id);
+    }
+  };
+
+  const handleGenerate = async () => {
+    try {
+      await generateDemo();
+      toast.success('Ritual generated.', { description: 'Demo content ready.' });
+    } catch {
+      toast.error('Generation failed.', { description: 'The AI refused to cooperate.' });
+    }
   };
 
   const isReveal = phaseInfo.phase === 'reveal';
-  const cardMemes = memes.map(m => toCardMeme(m, isReveal));
+  const cardMemes = activeMemes.map(m => toCardMeme(m, isReveal));
   const winnerId = cardMemes.length > 0
     ? cardMemes.reduce((a, b) => (a.votes > b.votes ? a : b)).id
     : undefined;
@@ -67,7 +85,7 @@ const Index = () => {
     <div className="min-h-screen bg-background relative">
       <RitualHeader phaseInfo={phaseInfo} theme={theme} />
 
-      {loading ? (
+      {loading && !isDemo ? (
         <div className="max-w-3xl mx-auto px-6 sm:px-10 py-20 text-center">
           <p className="font-mono text-muted-foreground text-sm animate-pulse-glow">
             Summoning the ritual...
@@ -81,7 +99,7 @@ const Index = () => {
 
           {phaseInfo.phase === 'submission' && (
             <div>
-              <SubmitSection onSubmit={handleSubmit} />
+              {!isDemo && <SubmitSection onSubmit={handleSubmit} />}
               {submitting && (
                 <div className="max-w-3xl mx-auto px-6 sm:px-10 pb-4">
                   <p className="font-mono text-xs text-primary animate-pulse-glow">
@@ -112,9 +130,13 @@ const Index = () => {
         </AnimatePresence>
       )}
 
-      {/* Demo phase selector — only visible with ?demo=true */}
       {isDemo && (
-        <PhaseSelector currentPhase={demoPhase} onPhaseChange={setDemoPhase} />
+        <PhaseSelector
+          currentPhase={demoPhase}
+          onPhaseChange={setDemoPhase}
+          onGenerate={handleGenerate}
+          generating={generating}
+        />
       )}
     </div>
   );
