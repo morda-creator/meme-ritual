@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,25 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+    // Check if today's competition already exists
+    const today = new Date().toISOString().split("T")[0];
+    const { data: existing } = await supabase
+      .from("competitions")
+      .select("*")
+      .eq("competition_date", today)
+      .maybeSingle();
+
+    if (existing) {
+      return new Response(JSON.stringify(existing), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Generate theme via AI
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -29,10 +49,7 @@ serve(async (req) => {
 - A bit absurd and existential
 - Never corporate or overly excited
 
-Generate a weekly meme theme. Return ONLY valid JSON with this exact format:
-{"title": "short theme title", "intro": "1-2 sentence sardonic introduction to the theme"}
-
-The theme should reference current cultural moments, tech trends, internet culture, or absurd observations about modern life. Be specific and funny.`
+Generate a weekly meme theme. The theme should reference current cultural moments, tech trends, internet culture, or absurd observations about modern life. Be specific and funny.`
           },
           {
             role: "user",
@@ -83,7 +100,24 @@ The theme should reference current cultural moments, tech trends, internet cultu
 
     const theme = JSON.parse(toolCall.function.arguments);
 
-    return new Response(JSON.stringify(theme), {
+    // Create competition in DB using service role (bypasses RLS)
+    const { data: competition, error: insertError } = await supabase
+      .from("competitions")
+      .insert({
+        theme_title: theme.title,
+        theme_intro: theme.intro,
+        status: "submission",
+        competition_date: today,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Insert error:", insertError);
+      throw new Error("Failed to create competition");
+    }
+
+    return new Response(JSON.stringify(competition), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
