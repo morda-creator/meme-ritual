@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, X } from 'lucide-react';
 
 interface SubmitSectionProps {
-  onSubmit: (file: File) => void;
+  onSubmit: (file: File, authorName?: string) => void;
 }
 
 const SubmitSection = ({ onSubmit }: SubmitSectionProps) => {
