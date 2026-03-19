@@ -1,0 +1,2 @@
+DELETE FROM votes WHERE meme_id IN (SELECT id FROM memes WHERE competition_id = '4a99486d-7c05-4c4a-92e0-74c0756776ef');
+DELETE FROM memes WHERE competition_id = '4a99486d-7c05-4c4a-92e0-74c0756776ef';
