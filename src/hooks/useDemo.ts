@@ -49,6 +49,29 @@ export function useDemo() {
     }
   }, []);
 
+  const demoSubmit = useCallback(async (file: File, authorName?: string) => {
+    const dataUrl = await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.readAsDataURL(file);
+    });
+
+    const newMeme: MemeWithVote = {
+      id: `demo-submit-${Date.now()}`,
+      competition_id: 'demo',
+      image_url: dataUrl,
+      ai_comment: 'The AI contemplates your offering in silence.',
+      author_name: authorName || null,
+      is_ai_generated: false,
+      session_id: 'demo-user',
+      vote_count: 0,
+      created_at: new Date().toISOString(),
+      hasVoted: false,
+    };
+
+    setDemoMemes(prev => [newMeme, ...prev]);
+  }, []);
+
   const demoVote = useCallback((memeId: string) => {
     setDemoMemes(prev => prev.map(m =>
       m.id === memeId && !m.hasVoted
@@ -57,5 +80,5 @@ export function useDemo() {
     ));
   }, []);
 
-  return { demoTheme, demoMemes, generating, generateDemo, demoVote };
+  return { demoTheme, demoMemes, generating, generateDemo, demoSubmit, demoVote };
 }

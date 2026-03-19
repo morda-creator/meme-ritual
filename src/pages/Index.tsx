@@ -34,7 +34,7 @@ const Index = () => {
 
   const [demoPhase, setDemoPhase] = useState<Phase>('submission');
   const { competition, memes, loading, submitting, submitMeme, vote } = useCompetition();
-  const { demoTheme, demoMemes, generating, generateDemo, demoVote } = useDemo();
+  const { demoTheme, demoMemes, generating, generateDemo, demoSubmit, demoVote } = useDemo();
 
   const phaseInfo = useMemo(() => {
     if (isDemo) return getDemoPhase(demoPhase);
@@ -52,7 +52,11 @@ const Index = () => {
 
   const handleSubmit = async (file: File, authorName?: string) => {
     try {
-      await submitMeme(file, authorName);
+      if (isDemo) {
+        await demoSubmit(file, authorName);
+      } else {
+        await submitMeme(file, authorName);
+      }
       toast.success('Offering received.', { description: 'The AI has taken note.' });
     } catch {
       toast.error('Submission failed.', { description: 'The void rejected your offering.' });
@@ -102,7 +106,7 @@ const Index = () => {
 
           {phaseInfo.phase === 'submission' && (
             <div>
-              {!isDemo && <SubmitSection onSubmit={handleSubmit} />}
+              <SubmitSection onSubmit={handleSubmit} />
               {submitting && (
                 <div className="max-w-3xl mx-auto px-6 sm:px-10 pb-4">
                   <p className="font-mono text-xs text-primary animate-pulse-glow">
