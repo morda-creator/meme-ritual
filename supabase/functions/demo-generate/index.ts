@@ -1,48 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { MEME_TEMPLATES, BOT_ALIASES, encodeMemeText, pickRandom } from "../_shared/meme-templates.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-interface MemeTemplate {
-  id: string;
-  lines: number;
-  description: string;
-}
-
-const MEME_TEMPLATES: MemeTemplate[] = [
-  { id: "drake", lines: 2, description: "Drakeposting: top = bad/boring, bottom = preferred alternative" },
-  { id: "fine", lines: 2, description: "This Is Fine: dog in burning room. Line 1 = situation, Line 2 = denial" },
-  { id: "db", lines: 3, description: "Distracted Boyfriend: Line 1 = distraction, Line 2 = boyfriend, Line 3 = girlfriend" },
-  { id: "buzz", lines: 2, description: "Buzz Lightyear 'X everywhere': Line 1 = subject, Line 2 = 'X everywhere'" },
-  { id: "rollsafe", lines: 2, description: "Roll Safe think about it: Line 1 = flawed premise, Line 2 = 'clever' conclusion" },
-  { id: "picard", lines: 2, description: "Picard facepalm: Line 1 = frustrating thing, Line 2 = why it's dumb" },
-  { id: "batman", lines: 2, description: "Batman slapping Robin: Line 1 = Robin says something dumb, Line 2 = Batman's response" },
-  { id: "doge", lines: 2, description: "Doge: Line 1 = 'much X', Line 2 = 'very Y / wow'" },
-];
-
-const BOT_ALIASES = [
-  "pixel_pusher", "dank_prophet", "meme_intern_42", "ctrl_alt_defeat",
-  "entropy_enjoyer", "the_algorithm", "null_pointer", "cache_money",
-];
-
-function encodeMemeText(text: string): string {
-  return text
-    .replace(/_/g, "__")
-    .replace(/ /g, "_")
-    .replace(/\?/g, "~q")
-    .replace(/%/g, "~p")
-    .replace(/#/g, "~h")
-    .replace(/\//g, "~s")
-    .replace(/"/g, "''")
-    .replace(/-/g, "--");
-}
-
-function pickRandom<T>(arr: T[], count: number): T[] {
-  const shuffled = [...arr].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -108,7 +70,7 @@ serve(async (req) => {
     if (!themeTc) throw new Error("No theme tool call");
     const theme = JSON.parse(themeTc.function.arguments);
 
-    // 2. Generate meme texts
+    // 2. Generate meme texts + comments in one call
     const botCount = 3 + Math.floor(Math.random() * 2); // 3-4
     const selectedTemplates = pickRandom(MEME_TEMPLATES, botCount);
     const selectedAliases = pickRandom(BOT_ALIASES, botCount);
