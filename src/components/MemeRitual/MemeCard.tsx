@@ -32,11 +32,11 @@ const MemeCard = ({ meme, index, showVoting, showAuthor, isWinner, onVote }: Mem
       )}
 
       {/* Image */}
-      <div className="relative aspect-[4/3] bg-secondary overflow-hidden">
+      <div className="relative bg-secondary overflow-hidden">
         <img
           src={meme.imageUrl}
           alt="Meme submission"
-          className="w-full h-full object-cover"
+          className="w-full h-auto"
           loading="lazy"
         />
         <div className="absolute inset-0 scanline pointer-events-none opacity-20" />

@@ -6,13 +6,50 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MEME_PROMPTS = [
-  "classic drake hotline bling two-panel meme with text",
-  "this is fine dog sitting in burning room meme",
-  "distracted boyfriend meme with three people",
+// Classic meme templates from memegen.link
+// Format: { template, top, bottom }
+// Text encoding: spaces = underscores, special chars need encoding
+function encodeMemeText(text: string): string {
+  return text
+    .replace(/_/g, "__")
+    .replace(/ /g, "_")
+    .replace(/\?/g, "~q")
+    .replace(/%/g, "~p")
+    .replace(/#/g, "~h")
+    .replace(/\//g, "~s")
+    .replace(/"/g, "''")
+    .replace(/-/g, "--");
+}
+
+interface MemeTemplate {
+  template: string;
+  topFn: (theme: string) => string;
+  bottomFn: (theme: string) => string;
+  author: string | null; // null = AI bot
+}
+
+const MEME_TEMPLATES: MemeTemplate[] = [
+  {
+    template: "drake",
+    topFn: () => "Actually dealing with your problems",
+    bottomFn: (theme) => `Making memes about ${theme}`,
+    author: "entropy_enjoyer",
+  },
+  {
+    template: "fine",
+    topFn: () => "This is fine",
+    bottomFn: () => "",
+    author: null, // AI bot
+  },
+  {
+    template: "distracted",
+    topFn: (theme) => `${theme}`,
+    bottomFn: () => "My actual responsibilities",
+    author: "ctrl_alt_defeat",
+  },
 ];
 
-const FAKE_AUTHORS = ["entropy_enjoyer", "ctrl_alt_defeat", null]; // null = AI bot
+const FAKE_VOTES = () => Math.floor(Math.random() * 30) + 3;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -32,7 +69,6 @@ serve(async (req) => {
       });
     }
 
-    // Get competition theme
     const { data: comp } = await supabase
       .from("competitions")
       .select("*")
@@ -58,56 +94,18 @@ serve(async (req) => {
     }
 
     const results: string[] = [];
+    const theme = comp.theme_title;
 
-    // Generate memes sequentially to avoid rate limits
-    for (let i = 0; i < MEME_PROMPTS.length; i++) {
+    for (let i = 0; i < MEME_TEMPLATES.length; i++) {
       try {
-        // Generate meme image
-        const imagePrompt = `Create a funny internet meme about "${comp.theme_title}". Use the style of a ${MEME_PROMPTS[i]}. Include funny text overlay that relates to the theme. The meme should be absurd, dry humor, internet-culture style. White impact font text.`;
+        const t = MEME_TEMPLATES[i];
+        const top = encodeMemeText(t.topFn(theme));
+        const bottom = encodeMemeText(t.bottomFn(theme));
 
-        const imgResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-3.1-flash-image-preview",
-            messages: [{ role: "user", content: imagePrompt }],
-            modalities: ["image", "text"],
-          }),
-        });
-
-        if (!imgResponse.ok) {
-          const t = await imgResponse.text();
-          console.error(`Image gen ${i} failed: ${imgResponse.status}`, t);
-          results.push(`meme ${i}: image gen failed`);
-          continue;
-        }
-
-        const imgData = await imgResponse.json();
-        const base64Url = imgData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-        if (!base64Url) {
-          results.push(`meme ${i}: no image in response`);
-          continue;
-        }
-
-        // Convert base64 to file and upload
-        const base64Data = base64Url.split(",")[1];
-        const binaryData = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-        const fileName = `seed-${competition_id.slice(0, 8)}-${i}-${Date.now()}.png`;
-
-        const { error: uploadError } = await supabase.storage
-          .from("memes")
-          .upload(fileName, binaryData, { contentType: "image/png" });
-
-        if (uploadError) {
-          console.error(`Upload ${i} failed:`, uploadError);
-          results.push(`meme ${i}: upload failed`);
-          continue;
-        }
-
-        const { data: urlData } = supabase.storage.from("memes").getPublicUrl(fileName);
+        // Build memegen.link URL — no API key needed
+        const pathParts = [t.template, top];
+        if (bottom) pathParts.push(bottom);
+        const memeUrl = `https://api.memegen.link/images/${pathParts.join("/")}.png?width=800`;
 
         // Generate AI commentary
         let aiComment = "The AI stares. Processing.";
@@ -123,9 +121,9 @@ serve(async (req) => {
               messages: [
                 {
                   role: "system",
-                  content: `You are the dry, sardonic AI host of MEME_RITUAL. Write a brief comment (1 sentence, under 100 chars) about a meme submission. Be witty, dry, slightly existential. Theme: "${comp.theme_title}"`,
+                  content: `You are the dry, sardonic AI host of MEME_RITUAL. Write a brief comment (1 sentence, under 100 chars) about a meme submission. Be witty, dry, slightly existential. Theme: "${theme}"`,
                 },
-                { role: "user", content: `Comment on meme #${i + 1}, a ${MEME_PROMPTS[i]} about the theme.` },
+                { role: "user", content: `Comment on a "${t.template}" meme template about the theme. Top text: "${t.topFn(theme)}", Bottom text: "${t.bottomFn(theme)}"` },
               ],
               tools: [{
                 type: "function",
@@ -149,37 +147,34 @@ serve(async (req) => {
             const tc = commentData.choices?.[0]?.message?.tool_calls?.[0];
             if (tc) aiComment = JSON.parse(tc.function.arguments).comment;
           } else {
-            await commentResponse.text(); // consume body
+            await commentResponse.text();
           }
         } catch (e) {
           console.error(`Commentary ${i} failed:`, e);
         }
 
-        const isAI = FAKE_AUTHORS[i] === null;
-        const authorName = FAKE_AUTHORS[i] || null;
-        const fakeVotes = Math.floor(Math.random() * 30) + 3;
+        const isAI = t.author === null;
+        const authorName = t.author || null;
 
-        // Insert meme
         const { error: insertError } = await supabase.from("memes").insert({
           competition_id,
-          image_url: urlData.publicUrl,
+          image_url: memeUrl,
           ai_comment: aiComment,
           author_name: authorName,
           is_ai_generated: isAI,
           session_id: `seed-${i}`,
-          vote_count: fakeVotes,
+          vote_count: FAKE_VOTES(),
         });
 
         if (insertError) {
           console.error(`Insert ${i} failed:`, insertError);
           results.push(`meme ${i}: insert failed`);
         } else {
-          results.push(`meme ${i}: success`);
+          results.push(`meme ${i} (${t.template}): success`);
         }
 
-        // Small delay between generations
-        if (i < MEME_PROMPTS.length - 1) {
-          await new Promise((r) => setTimeout(r, 1500));
+        if (i < MEME_TEMPLATES.length - 1) {
+          await new Promise((r) => setTimeout(r, 500));
         }
       } catch (e) {
         console.error(`Meme ${i} error:`, e);
@@ -187,7 +182,7 @@ serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ results, competition: comp.theme_title }), {
+    return new Response(JSON.stringify({ results, competition: theme }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
