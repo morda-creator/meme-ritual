@@ -80,11 +80,11 @@ export function useCompetition() {
     init();
   }, [fetchCompetition, fetchMemes]);
 
-  // Real-time subscription for new memes
+  // Real-time subscription for new memes and competition changes
   useEffect(() => {
     if (!competition?.id) return;
 
-    const channel = supabase
+    const memesChannel = supabase
       .channel('memes-feed')
       .on(
         'postgres_changes',
@@ -93,7 +93,21 @@ export function useCompetition() {
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    const compChannel = supabase
+      .channel('competition-status')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'competitions', filter: `id=eq.${competition.id}` },
+        (payload) => {
+          setCompetition(payload.new as Competition);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(memesChannel);
+      supabase.removeChannel(compChannel);
+    };
   }, [competition?.id, fetchMemes]);
 
   // Submit meme
