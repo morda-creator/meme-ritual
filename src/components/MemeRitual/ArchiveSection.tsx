@@ -1,7 +1,8 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useArchive } from '@/hooks/useArchive';
 import CountdownTimer from './CountdownTimer';
-import { Trophy } from 'lucide-react';
+import { Trophy, ChevronRight } from 'lucide-react';
 
 function getNextFriday9CET(): Date {
   const now = new Date();
