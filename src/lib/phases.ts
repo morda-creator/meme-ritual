@@ -53,6 +53,12 @@ export function getNextPhaseTime(phase: Phase): Date | null {
 
 function getNextFriday(today: Date): Date {
   const day = today.getUTCDay();
+  if (day === 5) {
+    // Today is Friday — if before reveal time (15:00 UTC), return today
+    const revealToday = new Date(today);
+    revealToday.setUTCHours(15, 0, 0, 0);
+    if (new Date() < revealToday) return new Date(today);
+  }
   const daysUntilFriday = (5 - day + 7) % 7 || 7;
   const next = new Date(today);
   next.setUTCDate(next.getUTCDate() + daysUntilFriday);

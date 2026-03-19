@@ -42,7 +42,7 @@ const Index = () => {
 
   const theme = competition
     ? { title: competition.theme_title, aiIntro: competition.theme_intro }
-    : { title: 'Loading...', aiIntro: 'The ritual stirs.' };
+    : { title: 'The next ritual begins Friday at 09:00', aiIntro: 'Patience. The altar is being prepared.' };
 
   const handleSubmit = async (file: File) => {
     try {

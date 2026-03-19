@@ -10,6 +10,14 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Guard: only allow competition creation on Fridays
+    const now = new Date();
+    if (now.getUTCDay() !== 5) {
+      return new Response(JSON.stringify({ error: "Rituals only happen on Fridays." }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
