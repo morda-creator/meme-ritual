@@ -117,6 +117,23 @@ Generate a weekly meme theme. The theme should reference current cultural moment
       throw new Error("Failed to create competition");
     }
 
+    // Auto-seed memes for the new competition
+    try {
+      console.log("Auto-seeding memes for competition:", competition.id);
+      const seedResponse = await fetch(`${supabaseUrl}/functions/v1/seed-memes`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${serviceRoleKey}`,
+        },
+        body: JSON.stringify({ competition_id: competition.id }),
+      });
+      const seedResult = await seedResponse.json();
+      console.log("Seed result:", JSON.stringify(seedResult));
+    } catch (seedErr) {
+      console.error("Auto-seed failed (non-fatal):", seedErr);
+    }
+
     return new Response(JSON.stringify(competition), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
