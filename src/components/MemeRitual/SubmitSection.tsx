@@ -94,21 +94,34 @@ const SubmitSection = ({ onSubmit }: SubmitSectionProps) => {
             className="relative border border-border rounded-lg overflow-hidden"
           >
             <img src={preview} alt="Preview" className="w-full max-h-80 object-contain bg-secondary" />
-            <div className="flex gap-3 p-4">
-              <button
-                onClick={clear}
-                className="flex items-center gap-2 px-4 py-2 rounded-md font-mono text-xs bg-secondary text-muted-foreground border border-border hover:border-destructive/40 hover:text-destructive transition-all"
-              >
-                <X className="w-3.5 h-3.5" />
-                Discard
-              </button>
-              <button
-                onClick={handleSubmit}
-                className="flex items-center gap-2 px-4 py-2 rounded-md font-mono text-xs bg-primary text-primary-foreground hover:opacity-90 transition-all box-glow"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                Submit offering
-              </button>
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-xs text-muted-foreground shrink-0">&gt;</span>
+                <input
+                  type="text"
+                  value={alias}
+                  onChange={(e) => setAlias(e.target.value.slice(0, 30))}
+                  placeholder="anonymous"
+                  className="flex-1 bg-secondary border border-border rounded-md px-3 py-1.5 font-mono text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/40 transition-colors"
+                />
+                <span className="font-mono text-[10px] text-muted-foreground/40">{alias.length}/30</span>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={clear}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md font-mono text-xs bg-secondary text-muted-foreground border border-border hover:border-destructive/40 hover:text-destructive transition-all"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Discard
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md font-mono text-xs bg-primary text-primary-foreground hover:opacity-90 transition-all box-glow"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Submit offering
+                </button>
+              </div>
             </div>
           </motion.div>
         )}
