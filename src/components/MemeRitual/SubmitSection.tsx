@@ -9,6 +9,7 @@ interface SubmitSectionProps {
 const SubmitSection = ({ onSubmit }: SubmitSectionProps) => {
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [alias, setAlias] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
