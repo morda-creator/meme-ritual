@@ -5,6 +5,7 @@ import RitualHeader from '@/components/MemeRitual/RitualHeader';
 import SubmitSection from '@/components/MemeRitual/SubmitSection';
 import MemeFeed from '@/components/MemeRitual/MemeFeed';
 import RevealBanner from '@/components/MemeRitual/RevealBanner';
+import ArchiveSection from '@/components/MemeRitual/ArchiveSection';
 import PhaseSelector from '@/components/MemeRitual/PhaseSelector';
 import { getDemoPhase, type Phase } from '@/lib/phases';
 import { WINNER_ANNOUNCEMENT } from '@/lib/mockData';
