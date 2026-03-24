@@ -19,13 +19,14 @@ export function useDemo() {
   const [demoMemes, setDemoMemes] = useState<MemeWithVote[]>([]);
   const [generating, setGenerating] = useState(false);
 
-  const generateDemo = useCallback(async () => {
+  const generateDemo = useCallback(async (): Promise<DemoTheme | null> => {
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('demo-generate');
       if (error) throw error;
 
-      setDemoTheme(data.theme);
+      const theme: DemoTheme = data.theme;
+      setDemoTheme(theme);
 
       const memes: MemeWithVote[] = (data.memes as DemoMemeRaw[]).map((m, i) => ({
         id: `demo-${Date.now()}-${i}`,
@@ -41,6 +42,7 @@ export function useDemo() {
       }));
 
       setDemoMemes(memes);
+      return theme;
     } catch (e) {
       console.error('Demo generation failed:', e);
       throw e;
