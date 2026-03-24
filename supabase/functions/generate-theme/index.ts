@@ -125,19 +125,31 @@ Generate a weekly meme theme. The theme should reference current cultural moment
       throw new Error("Failed to create competition");
     }
 
-    // Fire-and-forget bot submissions (don't await — avoid timeout)
+    // Fire-and-forget: bot submissions
     try {
       console.log("Triggering bot-submit for competition:", competition.id);
       fetch(`${supabaseUrl}/functions/v1/bot-submit`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${serviceRoleKey}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
         body: JSON.stringify({ competition_id: competition.id }),
-      }); // intentionally not awaited
-    } catch (seedErr) {
-      console.error("Bot-submit trigger failed (non-fatal):", seedErr);
+      });
+    } catch (e) {
+      console.error("Bot-submit trigger failed (non-fatal):", e);
+    }
+
+    // Fire-and-forget: welcome host message
+    try {
+      fetch(`${supabaseUrl}/functions/v1/host-comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
+        body: JSON.stringify({
+          competition_id: competition.id,
+          type: "welcome",
+          context: { theme: theme.title, meme_count: 0 },
+        }),
+      });
+    } catch (e) {
+      console.error("Host welcome trigger failed (non-fatal):", e);
     }
 
     return new Response(JSON.stringify(competition), {

@@ -113,18 +113,31 @@ serve(async (req) => {
       .update({ status: phase })
       .eq("id", comp.id);
 
+    // Fire-and-forget: host comment for phase change
+    try {
+      const memeCount = (await supabase.from("memes").select("id", { count: "exact", head: true }).eq("competition_id", comp.id)).count || 0;
+      fetch(`${supabaseUrl}/functions/v1/host-comment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
+        body: JSON.stringify({
+          competition_id: comp.id,
+          type: phase === "submission" ? "welcome" : "phase_change",
+          context: { theme: comp.theme_title, new_phase: phase, meme_count: memeCount },
+        }),
+      });
+    } catch (e) {
+      console.error("Host comment trigger failed (non-fatal):", e);
+    }
+
     // Trigger bot submissions when entering submission phase
     if (phase === "submission") {
       try {
         console.log("Triggering bot-submit for competition:", comp.id);
         fetch(`${supabaseUrl}/functions/v1/bot-submit`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${serviceRoleKey}`,
-          },
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${serviceRoleKey}` },
           body: JSON.stringify({ competition_id: comp.id }),
-        }); // Fire and forget — bot submits asynchronously with delays
+        });
       } catch (e) {
         console.error("Bot-submit trigger failed (non-fatal):", e);
       }
