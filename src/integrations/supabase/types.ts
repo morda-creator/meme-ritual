@@ -50,6 +50,38 @@ export type Database = {
         }
         Relationships: []
       }
+      host_messages: {
+        Row: {
+          competition_id: string
+          created_at: string
+          id: string
+          message: string
+          message_type: string
+        }
+        Insert: {
+          competition_id: string
+          created_at?: string
+          id?: string
+          message: string
+          message_type?: string
+        }
+        Update: {
+          competition_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          message_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "host_messages_competition_id_fkey"
+            columns: ["competition_id"]
+            isOneToOne: false
+            referencedRelation: "competitions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       memes: {
         Row: {
           ai_comment: string | null
