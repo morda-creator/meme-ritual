@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
@@ -9,10 +9,12 @@ import RevealBanner from '@/components/MemeRitual/RevealBanner';
 import ArchiveSection from '@/components/MemeRitual/ArchiveSection';
 import PhaseSelector from '@/components/MemeRitual/PhaseSelector';
 import GeneratingOverlay from '@/components/MemeRitual/GeneratingOverlay';
+import HostFeed from '@/components/MemeRitual/HostFeed';
 import { getDemoPhase, phaseInfoFromStatus, type Phase } from '@/lib/phases';
 import { WINNER_ANNOUNCEMENT } from '@/lib/mockData';
 import { useCompetition, type MemeWithVote } from '@/hooks/useCompetition';
 import { useDemo } from '@/hooks/useDemo';
+import { useHostMessages, useDemoHostMessages } from '@/hooks/useHostMessages';
 import type { Meme } from '@/lib/mockData';
 
 function toCardMeme(m: MemeWithVote, showAuthor: boolean): Meme {
@@ -33,8 +35,14 @@ const Index = () => {
   const isDemo = searchParams.get('demo') === 'true';
 
   const [demoPhase, setDemoPhase] = useState<Phase>('submission');
+  const [prevDemoPhase, setPrevDemoPhase] = useState<Phase>('submission');
   const { competition, memes, loading, submitting, submitMeme, vote } = useCompetition();
   const { demoTheme, demoMemes, generating, generateDemo, demoSubmit, demoVote } = useDemo();
+
+  // Host messages
+  const liveHost = useHostMessages(competition?.id || null);
+  const demoHost = useDemoHostMessages();
+  const hostMessages = isDemo ? demoHost.messages : liveHost.messages;
 
   const phaseInfo = useMemo(() => {
     if (isDemo) return getDemoPhase(demoPhase);
@@ -42,7 +50,7 @@ const Index = () => {
     return phaseInfoFromStatus(competition.status);
   }, [isDemo, demoPhase, competition]);
 
-  // Use demo data when in demo mode and demo content has been generated
+  // Demo: generate welcome message when demo content is generated
   const activeMemes = isDemo && demoMemes.length > 0 ? demoMemes : memes;
   const theme = isDemo && demoTheme
     ? { title: demoTheme.title, aiIntro: demoTheme.intro }
@@ -50,10 +58,40 @@ const Index = () => {
       ? { title: competition.theme_title, aiIntro: competition.theme_intro }
       : { title: 'The next ritual begins Friday at 09:00', aiIntro: 'Patience. The altar is being prepared.' };
 
+  // Demo: trigger host comments on phase change
+  useEffect(() => {
+    if (!isDemo || !demoTheme) return;
+    if (demoPhase !== prevDemoPhase) {
+      setPrevDemoPhase(demoPhase);
+      if (demoPhase === 'voting') {
+        demoHost.generateHostComment('phase_change', {
+          theme: demoTheme.title,
+          new_phase: 'voting',
+          meme_count: demoMemes.length,
+        });
+      } else if (demoPhase === 'reveal') {
+        demoHost.generateHostComment('phase_change', {
+          theme: demoTheme.title,
+          new_phase: 'reveal',
+          vote_count: demoMemes.reduce((sum, m) => sum + m.vote_count, 0),
+        });
+      }
+    }
+  }, [isDemo, demoPhase, prevDemoPhase, demoTheme, demoMemes, demoHost]);
+
   const handleSubmit = async (file: File, authorName?: string) => {
     try {
       if (isDemo) {
         await demoSubmit(file, authorName);
+        // Trigger submission reaction
+        if (demoTheme) {
+          demoHost.generateHostComment('submission_reaction', {
+            theme: demoTheme.title,
+            author_name: authorName || 'anonymous',
+            meme_count: demoMemes.length + 1,
+            is_ai: false,
+          });
+        }
       } else {
         await submitMeme(file, authorName);
       }
@@ -73,7 +111,15 @@ const Index = () => {
 
   const handleGenerate = async () => {
     try {
-      await generateDemo();
+      demoHost.clearMessages();
+      const result = await generateDemo();
+      // Generate welcome message after content is ready
+      if (result) {
+        await demoHost.generateHostComment('welcome', {
+          theme: result.title,
+          meme_count: 0,
+        });
+      }
       toast.success('Ritual generated.', { description: 'Demo content ready.' });
     } catch {
       toast.error('Generation failed.', { description: 'The AI refused to cooperate.' });
@@ -89,6 +135,11 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background relative">
       <RitualHeader phaseInfo={phaseInfo} theme={theme} />
+
+      {/* Host Feed - shown during active phases */}
+      {hostMessages.length > 0 && phaseInfo.phase !== 'preparing' && (
+        <HostFeed messages={hostMessages} />
+      )}
 
       {loading && !isDemo ? (
         <div className="max-w-3xl mx-auto px-6 sm:px-10 py-20 text-center">
