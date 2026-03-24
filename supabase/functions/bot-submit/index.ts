@@ -160,13 +160,11 @@ serve(async (req) => {
     const results: string[] = [];
 
     for (let i = 0; i < selectedTemplates.length; i++) {
-      // Stagger submissions: wait 30-180 seconds between each (except first waits 60-300s)
-      const delayMs = i === 0
-        ? (60 + Math.floor(Math.random() * 240)) * 1000
-        : (30 + Math.floor(Math.random() * 150)) * 1000;
-
-      console.log(`Bot meme ${i}: waiting ${Math.round(delayMs / 1000)}s before submitting...`);
-      await new Promise((r) => setTimeout(r, delayMs));
+      // Small stagger to avoid race conditions (2-5 seconds)
+      if (i > 0) {
+        const delayMs = (2 + Math.floor(Math.random() * 3)) * 1000;
+        await new Promise((r) => setTimeout(r, delayMs));
+      }
 
       try {
         const t = selectedTemplates[i];

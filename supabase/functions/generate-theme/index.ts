@@ -125,21 +125,19 @@ Generate a weekly meme theme. The theme should reference current cultural moment
       throw new Error("Failed to create competition");
     }
 
-    // Auto-seed memes for the new competition
+    // Fire-and-forget bot submissions (don't await — avoid timeout)
     try {
       console.log("Triggering bot-submit for competition:", competition.id);
-      const seedResponse = await fetch(`${supabaseUrl}/functions/v1/bot-submit`, {
+      fetch(`${supabaseUrl}/functions/v1/bot-submit`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${serviceRoleKey}`,
         },
         body: JSON.stringify({ competition_id: competition.id }),
-      });
-      const seedResult = await seedResponse.json();
-      console.log("Seed result:", JSON.stringify(seedResult));
+      }); // intentionally not awaited
     } catch (seedErr) {
-      console.error("Auto-seed failed (non-fatal):", seedErr);
+      console.error("Bot-submit trigger failed (non-fatal):", seedErr);
     }
 
     return new Response(JSON.stringify(competition), {
