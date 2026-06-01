@@ -1,26 +1,28 @@
 
+## Problem
+memegen.link tilføjer et lille "memegen.link" watermark nederst på alle billeder som standard. Det gør det for nemt for brugere at spotte hvilke memes der er bot-genererede — hvilket ødelægger Reveal-faseens "plot twist".
 
-## Plan: Enable Submission in Demo Mode
+## Løsning
+memegen.link's API understøtter en `watermark=none` query-parameter der fjerner watermarket. Vi tilføjer den til alle steder hvor vi bygger meme URLs.
 
-### Problem
-The `SubmitSection` component is conditionally hidden when `isDemo` is true (`{!isDemo && <SubmitSection />}`). In production, submission works but only when a competition exists (Fridays).
+## Filer der skal opdateres
 
-### Changes
+Tilføj `&watermark=none` til image URL i:
 
-#### 1. `src/pages/Index.tsx` — Show SubmitSection in demo mode
-- Remove the `!isDemo &&` guard so SubmitSection renders in both modes
-- In demo mode, submitted memes get added to the local `demoMemes` state instead of hitting the database
+1. **`supabase/functions/bot-submit/index.ts`** (linje ~170)
+   ```ts
+   const memeUrl = `https://api.memegen.link/images/${t.id}/${encodedLines.join("/")}.png?width=800&watermark=none`;
+   ```
 
-#### 2. `src/hooks/useDemo.ts` — Add local demo submission
-- Add a `demoSubmit(file: File, authorName?: string)` function
-- Reads the file as a data URL and adds it to `demoMemes` state with a fake ID, zero votes, and a placeholder AI comment
-- No database or edge function calls — purely local
+2. **`supabase/functions/demo-generate/index.ts`** (linje ~140)
+   ```ts
+   const imageUrl = `https://api.memegen.link/images/${t.id}/${encodedLines.join("/")}.png?width=800&watermark=none`;
+   ```
 
-#### 3. `src/pages/Index.tsx` — Route submit to correct handler
-- When `isDemo`: call `demoSubmit` from useDemo
-- When not demo: call `submitMeme` from useCompetition (existing behavior)
+3. **`supabase/functions/seed-memes/index.ts`** — tjekkes og opdateres hvis den også bygger memegen URLs.
 
-### Files to edit
-- `src/hooks/useDemo.ts` — add `demoSubmit` function
-- `src/pages/Index.tsx` — show SubmitSection always, route to demo/prod handler
+4. **`src/lib/mockData.ts`** — hvis der findes hardcoded memegen URLs til mock data, opdateres tilsvarende.
 
+## Bemærk
+- Eksisterende memes i databasen (fra tidligere konkurrencer) bevarer deres watermark — kun nye bot submissions bliver clean. Det er fint; arkivet er historik.
+- Ingen ændringer til frontend, schema eller AI-prompts. Rent URL-fix i edge functions.
