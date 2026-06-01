@@ -212,7 +212,7 @@ serve(async (req) => {
         while (lines.length < t.lines) lines.push("_");
 
         const encodedLines = lines.map(l => encodeMemeText(l || "_"));
-        const memeUrl = `https://api.memegen.link/images/${t.id}/${encodedLines.join("/")}.png?width=800`;
+        const memeUrl = `https://api.memegen.link/images/${t.id}/${encodedLines.join("/")}.png?width=800&watermark=none`;
 
         // Generate AI commentary
         let aiComment = "The AI stares. Processing.";
