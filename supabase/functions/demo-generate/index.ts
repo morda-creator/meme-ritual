@@ -140,7 +140,7 @@ serve(async (req) => {
       while (lines.length < t.lines) lines.push("_");
 
       const encodedLines = lines.map((l: string) => encodeMemeText(l || "_"));
-      const imageUrl = `https://api.memegen.link/images/${t.id}/${encodedLines.join("/")}.png?width=800`;
+      const imageUrl = `https://api.memegen.link/images/${t.id}/${encodedLines.join("/")}.png?width=800&watermark=none`;
 
       return {
         imageUrl,
